@@ -9,7 +9,7 @@ import { html } from 'htm/preact'
 * Virtual list of items with different heights
 *   - Uses IntersectionObserver on every element in the list
 */
-export default function DynamicSizeList ({ count, estimatedItemHeight = 20, itemRender, overscanCount = 5, ...props }) {
+export default function DynamicSizeList ({ count, estimatedItemHeight = 20, itemRender, overscanCount = 5, direction = 1, ...props }) {
   const ref = useRef()
   const observer = useRef()
   const content = useRef()
@@ -23,9 +23,12 @@ export default function DynamicSizeList ({ count, estimatedItemHeight = 20, item
     observer.current = new window.IntersectionObserver(onIntersect, {})
     observer.current.observe(content.current)
     window.addEventListener('resize', onResize)
-    
-    ref.current.scrollTo(0, ref.current.scrollHeight) 
-
+    if (direction === -1) {
+      ref.current.addEventListener('wheel', event => {
+          event.preventDefault()
+          ref.current.scrollTop -= event.deltaY
+      })
+    }
     return () => {
       window.removeEventListener('resize', onResize)
       observer.current.disconnect()
@@ -118,17 +121,19 @@ export default function DynamicSizeList ({ count, estimatedItemHeight = 20, item
 
   const components = []
   for (let index = startIndex; index < endIndex; index++) {
-    const component = itemRender(index)
-    component.key = index
-    components.push(component)
+    components.push(html`
+      <div key=${index} style=${direction === -1 ? 'transform: rotate(180deg); direction: ltr;' : ''}>
+        ${itemRender(index)}
+      </div>
+    `)
   }
 
   // console.log({ startIndex, endIndex, heights })
 
   return html`
-    <div ref=${ref} ...${props} style="height:100%; overflow-y: scroll;">
-      <div style="position:relative; overflow:hidden; width:100%; min-height:100%; height:${fullHeight}px; border: 1px solid tomato;">
-        <div ref=${content} style="position:absolute; top:${topOffset}px; left:0; height:100%; width:100%; overflow:visible; border: 2px solid green">
+    <div ref=${ref} ...${props} style="height:100%; overflow-y: scroll; ${direction === -1 ? `transform: rotate(180deg); direction: rtl;` : ''}">
+      <div style="position:relative; overflow:hidden; width:100%; min-height:100%; height:${fullHeight}px;">
+        <div ref=${content} style="position:absolute; top:${topOffset}px; left:0; height:100%; width:100%; overflow:visible;">
           ${components}
         </div>
       </div>

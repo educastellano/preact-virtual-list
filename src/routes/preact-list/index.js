@@ -56,6 +56,7 @@ export default function PreactList() {
           class=${style.list}
           count=${itemsDynamicSize.length}
           estimatedItemHeight=${36}
+          direction=${-1}
           itemRender=${index => html`
             <div class=${style.dynamicSizeItem} data-index=${index} style=${index % 2 === 0 ? `` : `background-color: #eee`}>
               ${itemsDynamicSize[index].name}
