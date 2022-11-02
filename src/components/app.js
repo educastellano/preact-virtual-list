@@ -1,0 +1,26 @@
+import { h } from 'preact';
+import { Router } from 'preact-router';
+
+import Header from './header';
+
+// Code-splitting is automated for `routes` directory
+import Vanilla from '../routes/vanilla';
+import ReactWindow from '../routes/react-window'
+import ReactVirtual from '../routes/react-virtual'
+import PreactIntersectionObserver from '../routes/preact-intersection-observer'
+import PreactList from '../routes/preact-list'
+
+const App = () => (
+	<div id="app">
+		<Header />
+		<Router>
+			<Vanilla path="/vanilla" />
+			<PreactIntersectionObserver path="/preact-intersection-observer/" />
+			<PreactList path="/preact-list" />
+			<ReactWindow path="/react-window/" />
+			<ReactVirtual path="/react-virtual/" />
+		</Router>
+	</div>
+)
+
+export default App;

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <style>
+    #view {
+      height:  500px;
+      overflow-y: scroll;
+    }
+    #infinite-list {
+    }
+    .item {
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-bottom: none;
+    }
+    .item:last-child {
+      border-bottom: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="view">
+    <div id="infinite-list"></div>
+  </div>
+  <script type="module">
+    import { html, render } from 'https://unpkg.com/htm/preact/index.mjs?module'
+    import { useEffect } from 'preact/hooks'
+
+    const items = Array(500).fill({})
+
+    function App (props) {
+      return html`
+        <div id="view">
+          <${VirtualList} items=${items} />
+        </div>
+      `;
+    }
+
+    function VirtualList({ items, itemHeight }) {
+
+      useEffect(() => {
+        
+      }, [])
+
+      return html`
+        <div>
+          ${items.map((item, index) => 
+            html`<div className="item">${index}</div>`
+          )}
+        </div>
+      `
+    }
+
+    render(html`<${App} />`, document.body);
+  </script>
+</body>
+</html>

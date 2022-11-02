@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <style>
+    html {
+      overflow: hidden;
+    }
+    #view {
+      height:  500px;
+      overflow-y: scroll;
+    }
+
+    #infinite-list {
+    }
+  </style>
+</head>
+<body>
+  <div id="view">
+    <div id="infinite-list"></div>
+  </div>
+  <script>
+    // 
+    // https://gist.github.com/mafintosh/e5ab6bcca4a687ff63dffddfb41f701e
+    // 
+
+    class InfiniteList {
+      constructor (element, { itemHeight = 20, count = 1, render } = { }) {
+        this.element = element
+
+        // "from/to" indexes of entries to render
+        this.start = 0
+        this.end = 0
+
+        this.actualStart = 0
+        this.actualEnd = 0
+        this.anchorVisible = true
+
+        this.top = document.createElement('div')
+        this.btm = document.createElement('div')
+        this.anchor = document.createElement('div')
+        this.content = document.createElement('div')
+
+        this.top.id = 'top'
+        this.btm.id = 'btm'
+        this.anchor.id = 'anchor'
+        this.content.id = 'content'
+
+        this.element.append(this.top)
+        this.element.append(this.content)
+        this.element.append(this.btm)
+        this.element.append(this.anchor)
+
+        this.itemHeight = itemHeight
+        this.count = count
+        this.render = render
+
+        this.top.style.backgroundColor = 'red'
+        this.top.style.width = '10px'
+        this.btm.style.backgroundColor = 'green'
+        this.btm.style.width = '10px'
+
+        this.btm.style.overflow = this.top.style.overflow = 'hidden'
+
+        this._start()
+      }
+
+      _resetTo (i) {
+        console.log('reset to', i)
+        const inc = Math.ceil(this.getVisibleHeight() / this.itemHeight)
+
+        this.start = i - 2 * inc
+        if (this.start < 0) this.start = 0
+        this.end = this.start + 5 * inc
+        if (this.end > this.count) this.end = this.count
+
+        this._update()
+      }
+
+      _loadUp () {
+        console.log('load up bf', { start: this.start, end: this.end })
+        const inc = Math.ceil(this.getVisibleHeight() / this.itemHeight)
+
+        this.start -= inc
+        if (this.start < 0) this.start = 0
+
+        if (this.end - this.start >= 5 * inc) {
+          this.end -= inc
+        }
+
+        console.log('load up af', { start: this.start, end: this.end, inc })
+
+        this._update()
+      }
+
+      _loadDown () {
+        console.log('load down bf', { start: this.start, end: this.end })
+        const inc = Math.ceil(this.getVisibleHeight() / this.itemHeight)
+
+        this.end += inc
+        if (this.end > this.count) this.end = this.count
+
+        if (this.end - this.start >= 5 * inc) {
+          this.start += inc
+        }
+
+        console.log('load down af', { start: this.start, end: this.end, inc })
+
+        this._update()
+      }
+
+      _start () {
+        this._observer = new window.IntersectionObserver((entries, observer) => {
+          console.log('IntersectionObserver cb')
+          let dir = 0
+          let resetTo = -1
+
+          for (const entry of entries) {
+            console.log({ entries })
+            const isVisible = entry.intersectionRatio > 0
+
+            if (entry.target === this.anchor) {
+              this.anchorVisible = isVisible
+              continue
+            }
+
+            // removes the spacers
+            if (!isVisible) {
+              if (entry.target === this.btm || entry.target === this.top) {
+                console.log('target btm or top')
+                while (entry.target.lastElementChild) {
+                  this._observer.unobserve(entry.target.lastElementChild)
+                  entry.target.lastElementChild.remove()
+                }
+              }
+              continue
+            }
+
+            if (!entry.target.dataset.index) {
+              if (entry.target.offsetHeight > 2 * this.itemHeight) {
+                const a = document.createElement('div')
+                const b = document.createElement('div')
+                const o = entry.target.offsetHeight & 1
+                const m = (entry.target.offsetHeight - o) / 2
+
+                a.style.width = b.style.width = entry.target.width
+                a.style.backgroundColor = b.style.backgroundColor = entry.target.backgroundColor
+                a.style.height = m + 'px'
+                b.style.height = (m + o) + 'px'
+
+                if (entry.target === this.btm || entry.target === this.top) {
+                  if (entry.target.firstElementChild) continue
+                  entry.target.append(a)
+                  entry.target.append(b)
+                } else {
+                  entry.target.parentElement.insertBefore(b, entry.target)
+                  entry.target.parentElement.insertBefore(a, b)
+
+                  this._observer.unobserve(entry.target)
+                  entry.target.remove()
+                }
+                this._observer.observe(a)
+                this._observer.observe(b)
+              } else {
+                resetTo = Math.floor(entry.target.offsetTop / this.itemHeight)
+              }
+            }
+
+            if (entry.target === this.top) {
+              // console.log('dir -1')
+              dir = -1
+            }
+            else if (entry.target === this.btm) {
+              // console.log('dir 1')
+              dir = 1
+            }
+            else {
+              // console.log('dir else')
+              const idx = Number(entry.target.dataset.index)
+              const third = Math.round(this.end - this.start) / 3
+
+              if (idx < this.start + third) dir = -1
+              else if (idx >= this.start + 2 * third) dir = 1
+            }
+          }
+
+          if (resetTo > 0) this._resetTo(resetTo)
+          else if (dir < 0) this._loadUp()
+          else if (dir > 0) this._loadDown()
+        })
+
+        this._observer.observe(this.top)
+        this._observer.observe(this.btm)  
+        this._observer.observe(this.anchor)
+      }
+
+      getVisibleHeight () {
+        return this.element.parentElement.getClientRects()[0].height
+      }
+
+      update ({ count = this.count } = {}) {
+        const atBottom = this.atBottom()
+        this.count = count
+        if (atBottom) this._loadDown()
+      }
+
+      atBottom () {
+        return this.anchorVisible && this.end === this.count
+      }
+
+      _update () {
+        while (this.actualStart < this.start && this.actualStart < this.actualEnd) {
+          const c = this.content.firstElementChild
+          c.remove()
+          this._observer.unobserve(c)
+          this.actualStart++
+        }
+
+        while (this.actualEnd > this.end && this.actualStart < this.actualEnd) {
+          const c = this.content.lastElementChild
+          c.remove()
+          this._observer.unobserve(c)
+          this.actualEnd--
+        }
+
+        if (this.actualStart >= this.actualEnd) {
+          this.actualStart = this.actualEnd = this.start
+
+          while (this.actualEnd < this.end) {
+            const i = this.actualEnd++
+            const el = this.render(i)
+            el.setAttribute('data-index', i)
+            this.content.append(el)
+            this._observer.observe(el)
+          }
+        } else {
+          while (this.actualStart > this.start && this.actualStart < this.end) {
+            const i = --this.actualStart
+            const el = this.render(i)
+            el.setAttribute('data-index', i)
+            this.content.prepend(el)
+            this._observer.observe(el)
+          }
+
+          while (this.actualEnd < this.end) {
+            const i = this.actualEnd++
+            const el = this.render(i)
+            el.setAttribute('data-index', i)
+            this.content.append(el)
+            this._observer.observe(el)
+          }
+        }
+
+        this.top.style.height = (this.itemHeight * this.start) + 'px'
+        this.btm.style.height = (this.itemHeight * (this.count - this.end)) + 'px'
+      }
+
+      _insert (index) {
+        const el = this.render(index)
+        el.setAttribute('data-index', index)
+        this.content.append(el)
+        this._observer.observe(el)
+      }
+    }
+
+
+    const inf = new InfiniteList(document.querySelector('#infinite-list'), {
+      count: 10000,
+      render (index) {
+        // console.log('make element!', index)
+
+        const div = document.createElement('div')
+
+        div.style.height = Math.floor(20) + 'px'
+        div.innerText = 'I an entry #' + index
+
+        setTimeout(function () {
+          div.style.height = Math.floor(20 + Math.random() * 10) + 'px'
+          div.innerText += ' (loaded)'
+
+          if (inf.atBottom()) scrollDown()
+        }, 400)
+
+        return div
+      }
+    })
+
+    function scrollDown () {
+      document.querySelector('#view').scrollTo({ top: document.querySelector('#infinite-list').offsetHeight })
+    }
+
+    setInterval(() => {
+      const atBottom = inf.atBottom()
+      inf.update({
+        count: inf.count + 1
+      })
+      if (atBottom) scrollDown()
+    }, 1000)
+
+    // inf.update()
+  </script>
+</body>
+</html>
