@@ -7,15 +7,13 @@
 .content {
   display: flex;
   justify-content: center;
-  height: calc(100vh - 500px);
+  height: calc(100vh - 400px);
 }
 
 .list {
   border: 1px solid #ddd;
   padding: 16px;
   width: 100%;
-  /*transform: rotate(180deg);
-  direction: rtl;*/
 }
 
 .fixedSizeItem {
@@ -26,11 +24,11 @@
   padding: 4px;
   border: 1px solid #ddd;
   border-bottom: none;
-  /*transform: rotate(180deg);
-  direction: ltr;*/
 }
 
 .placeholder {
-  height: 36px;
-  background-color: tomato;
+  height: 20px;
+  margin: 8px;
+  background-color: #eee  ;
+  border-radius: 5px;
 }

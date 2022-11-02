@@ -17,25 +17,45 @@ const itemsDynamicSize = Array(500).fill().map((item, index) => ({
   `
 }))
 
-const fetchItems = async (startIndex=0, endIndex) => {
+const fetchData = async (startIndex, endIndex, ms=1000) => {
   return new Promise((resolve, reject) => {
-    // const items = Array(100).fill().map((item, index) => ({ 
-    //   id: startIndex + index, 
-    //   name: `#${startIndex + index} - 
-    //     ${Array(1 + Math.round(Math.random() * 100)).fill()
-    //       .reduce((acc, c) => `bla ${acc}`, '')}
-    //   `
-    // }))
-    setTimeout(() => resolve(itemsDynamicSize.slice(startIndex, endIndex)), 1000)
+    setTimeout(() => 
+      resolve(itemsDynamicSize.slice(startIndex, endIndex)), 
+      ms
+    )
   })
 }
 
+const pageSize = 100
+
 export default function PreactList() {
 
-  const [items, setItems] = useState([])
+  const [ data, setData ] = useState({ 
+    startIndex: 0, 
+    messages: [], 
+    length: 0
+  })
 
-  const onIndexChange = (startIndex, endIndex) => {
-    fetchItems(startIndex, endIndex).then(items => setItems(items))
+  useEffect(() => {
+    fetchData(0, pageSize-1, 0).then(messages => 
+      setData({ 
+        startIndex: 0, 
+        messages, 
+        length: itemsDynamicSize.length 
+      })
+    )
+  }, [])
+
+  const onIndexChange = ({ startIndex, endIndex }) => {
+    if (!(startIndex >= data.startIndex && endIndex < data.startIndex + data.messages.length)) {
+      fetchData(startIndex, startIndex+pageSize-1).then(messages => 
+        setData({
+          startIndex,
+          messages,
+          length: itemsDynamicSize.length
+        })
+      )
+    }
   }
 
   return html`
@@ -54,31 +74,19 @@ export default function PreactList() {
         />
         <${DynamicSizeList}
           class=${style.list}
-          count=${itemsDynamicSize.length}
+          count=${data.length}
           estimatedItemHeight=${36}
-          direction=${-1}
-          itemRender=${index => html`
-            <div class=${style.dynamicSizeItem} data-index=${index} style=${index % 2 === 0 ? `` : `background-color: #eee`}>
-              ${itemsDynamicSize[index].name}
-            </div>`
+          reverse=${true}
+          onIndexChange=${onIndexChange}
+          itemRender=${index => data.messages[index - data.startIndex]
+            ? html`
+              <div class=${style.dynamicSizeItem} data-index=${index}>
+                ${data.messages[index - data.startIndex].name}
+              </div>`
+            : html`<div class=${style.placeholder}></div>`
           }
         />
       </div>
     </div>
   `
 }
-
-
-// <${DynamicSizeList}
-//   class=${style.list}
-//   count=${itemsDynamicSize.length}
-//   estimatedItemHeight=${28}
-//   itemRender=${index => index in items 
-//     ? html`
-//       <div class=${style.dynamicSizeItem}>
-//         ${items[index].name}
-//       </div>`
-//     : html`<div class=${style.placeholder}></div>`
-//   }
-//   onIndexChange=${onIndexChange}
-// />

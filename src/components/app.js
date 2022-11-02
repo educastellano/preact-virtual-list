@@ -7,7 +7,6 @@ import Header from './header';
 import Vanilla from '../routes/vanilla';
 import ReactWindow from '../routes/react-window'
 import ReactVirtual from '../routes/react-virtual'
-import PreactIntersectionObserver from '../routes/preact-intersection-observer'
 import PreactList from '../routes/preact-list'
 
 const App = () => (
@@ -15,7 +14,6 @@ const App = () => (
 		<Header />
 		<Router>
 			<Vanilla path="/vanilla" />
-			<PreactIntersectionObserver path="/preact-intersection-observer/" />
 			<PreactList path="/preact-list" />
 			<ReactWindow path="/react-window/" />
 			<ReactVirtual path="/react-virtual/" />
