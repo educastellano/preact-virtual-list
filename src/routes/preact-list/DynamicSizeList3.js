@@ -19,6 +19,9 @@ export default function DynamicSizeList ({
   const content = useRef()
   const heights = useRef(new Array(count))
   const [{ startIndex, endIndex }, setIndexes] = useState({ startIndex: 0, endIndex: 0 })
+  const startIndexPrev = useRef(startIndex)
+  const endIndexPrev = useRef(endIndex)
+  const indexDiffToRender = useRef((overscanCount + (overscanCount & 1)) / 2)
 
   useEffect(() => {
     observer.current = new window.IntersectionObserver((entries, observer) => {
@@ -37,6 +40,8 @@ export default function DynamicSizeList ({
   }, [count])
 
   useEffect(() => {
+    startIndexPrev.current = startIndex
+    endIndexPrev.current = endIndex
     observer.current.disconnect()
     // Measure item heights and Observe
     const elements = getRenderedElements()
@@ -83,7 +88,10 @@ export default function DynamicSizeList ({
     }
 
     // Set new indexes
-    setIndexes({ startIndex, endIndex })
+    if (Math.abs(startIndex - startIndexPrev.current) >= indexDiffToRender.current || 
+        Math.abs(endIndex - endIndexPrev.current) >= indexDiffToRender.current) {
+      setIndexes({ startIndex, endIndex })
+    }
   }
 
   const computeOffset = (startIndex, endIndex) => {
