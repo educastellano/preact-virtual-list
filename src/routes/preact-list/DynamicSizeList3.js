@@ -18,24 +18,20 @@ export default function DynamicSizeList ({
   const observer = useRef()
   const content = useRef()
   const heights = useRef(new Array(count))
-  const [height, setHeight] = useState(0)
   const [{ startIndex, endIndex }, setIndexes] = useState({ startIndex: 0, endIndex: 0 })
 
   useEffect(() => {
-    setHeight(ref.current.offsetHeight)
     observer.current = new window.IntersectionObserver((entries, observer) => {
       computeIndexes()
     }, {})
     observer.current.observe(content.current)
-    window.addEventListener('resize', onResize)
     if (reverse) {
       ref.current.addEventListener('wheel', event => {
-          event.preventDefault()
-          ref.current.scrollTop -= event.deltaY
+        event.preventDefault()
+        ref.current.scrollTop -= event.deltaY
       })
     }
     return () => {
-      window.removeEventListener('resize', onResize)
       observer.current.disconnect()
     }
   }, [count])
@@ -52,17 +48,15 @@ export default function DynamicSizeList ({
     onIndexChange({ startIndex, endIndex })
   }, [startIndex, endIndex])
 
-  const onResize = () => {
-    if (height !== ref.current.offsetHeight) {
-      setHeight(ref.current.offsetHeight)
-    }
-  }
-
   const getEstimatedItemHeight = index => {
     if (typeof estimatedItemHeight === 'function') {
       return estimatedItemHeight(index)
     }
     return estimatedItemHeight
+  }
+
+  const getRenderedElements = () => {
+    return content.current.children
   }
 
   const computeIndexes = () => {
@@ -92,20 +86,16 @@ export default function DynamicSizeList ({
     setIndexes({ startIndex, endIndex })
   }
 
-  const getRenderedElements = () => {
-    return content.current.children
-  }
-
-  const computeOffsetAtIndex = index => {
+  const computeOffset = (startIndex, endIndex) => {
     let offset = 0
-    for (let i = 0; i < index; i++) {
+    for (let i = startIndex; i < endIndex; i++) {
       offset += heights.current[i] || getEstimatedItemHeight(i)
     }
     return offset
   }
 
-  const fullHeight = computeOffsetAtIndex(count)
-  const topOffset = computeOffsetAtIndex(startIndex)
+  const topOffset = computeOffset(0, startIndex)
+  const fullHeight = topOffset + computeOffset(startIndex, count)
 
   const components = []
   for (let index = startIndex; index < endIndex; index++) {
